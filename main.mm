@@ -1,15 +1,14 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#import <AudioToolbox/AudioToolbox.h>
 
-__attribute__((constructor))
-static void initialize_executor() {
-    // تشغيل صوت هز/تنبيه بالجهاز فور التحميل للتحقق بدون واجهة
-    AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
-    NSLog(@"[+] 7modyDelta Loaded Successfully!");
+@interface ExecutorUI : NSObject
++ (void)showMenu;
+@end
 
-    // الانتظار 3 ثواني لحد ما واجهة اللعبة تفتح تماماً
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+@implementation ExecutorUI
+
++ (void)showMenu {
+    dispatch_async(dispatch_get_main_queue(), ^{
         UIWindow *keyWindow = nil;
         for (UIWindow *window in [UIApplication sharedApplication].windows) {
             if (window.isKeyWindow) {
@@ -18,13 +17,25 @@ static void initialize_executor() {
             }
         }
         
-        UIViewController *rootVC = keyWindow.rootViewController;
-        if (rootVC) {
-            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"7modyDelta"
-                                                                           message:@"تم حقن الـ Dylib بنجاح!"
-                                                                    preferredStyle:UIAlertControllerStyleAlert];
-            [alert addAction:[UIAlertAction actionWithTitle:@"تم" style:UIAlertActionStyleDefault handler:nil]];
-            [rootVC presentViewController:alert animated:YES completion:nil];
+        UIViewController *topVC = keyWindow.rootViewController;
+        while (topVC.presentedViewController) {
+            topVC = topVC.presentedViewController;
         }
+        
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"7modyDelta iOS"
+                                                                       message:@"الـ Executor شغال داخل الماب بنجاح!\nالخطوة الجاية: ربط Luau."
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"حسناً" style:UIAlertActionStyleDefault handler:nil]];
+        [topVC presentViewController:alert animated:YES completion:nil];
+    });
+}
+
+@end
+
+__attribute__((constructor))
+static void initialize_executor() {
+    // إظهار التنبيه بعد 5 ثواني من دخول الماب لضمان تحميل واجهة الماب بالكامل
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [ExecutorUI showMenu];
     });
 }
